@@ -13,10 +13,10 @@ const SETTINGS = {
   PAYMENT_INFO: 'Payment: please pay when you visit our hotel 🏨',
   ID_PREFIX: 'HM',
   SERVICES: [                        // PLACEHOLDERS: replace names and prices
-    { name: 'Standard Room (per night)', price: '₹XXX' },
-    { name: 'Deluxe Room (per night)', price: '₹XXX' },
-    { name: 'Family Suite (per night)', price: '₹XXX' },
-    { name: 'Banquet Hall (per event)', price: '₹XXX' },
+    { name: 'Standard Room (per night)', price: '₹800' },
+    { name: 'Deluxe Room (per night)', price: '₹1300' },
+    { name: 'Family Suite (per night)', price: '₹2500' },
+    { name: 'Banquet Hall (per event)', price: '₹10,000' },
     { name: 'Restaurant Table Booking', price: 'Free' },
   ],
 };
@@ -51,7 +51,7 @@ function welcomeText() {
     `👋 Welcome to *${SETTINGS.BUSINESS_NAME}*, ${SETTINGS.CITY}! 🏨\n` +
     `📞 Call us: ${SETTINGS.CALL_PHONE}\n` +
     `🕘 Open: ${SETTINGS.OPENING_HOURS}\n\n` +
-    `Reply *1* or *MENU* to see the menu 📋`
+    `Reply *1* or *SERVICES* to see the services 📋`
   );
 }
 
