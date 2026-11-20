@@ -1,0 +1,79 @@
+name: W-Bot07
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */5 * * *'
+
+concurrency:
+  group: whatsapp-bot-07
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait 25 seconds (let old run save its session)
+        run: sleep 25
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Create session save script
+        run: |
+          cat > "$RUNNER_TEMP/save_session.sh" <<'EOF'
+          #!/bin/bash
+          cd "$GITHUB_WORKSPACE" || exit 0
+          [ -f session_bot/creds.json ] || exit 0
+          TMP=$(mktemp -d)
+          cp -a session_bot/. "$TMP"/
+          rm -rf "$TMP/.git"
+          cd "$TMP" || exit 0
+          git init -q
+          git checkout -q -b session
+          git add -A
+          git -c user.name="wa-bot" -c user.email="wa-bot@users.noreply.github.com" commit -q -m "save session $(date -u +%FT%TZ)"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" session
+          echo "session saved"
+          cd "$GITHUB_WORKSPACE"
+          rm -rf "$TMP"
+          EOF
+          chmod +x "$RUNNER_TEMP/save_session.sh"
+
+      - name: Restore session
+        run: |
+          rm -rf session_bot
+          if git clone --depth 1 --branch session "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" session_bot; then
+            rm -rf session_bot/.git
+            echo "Session restored"
+          else
+            rm -rf session_bot
+            mkdir -p session_bot
+            echo "No saved session, starting with an empty folder"
+          fi
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run bot (with background session saver)
+        timeout-minutes: 335
+        run: |
+          nohup bash -c 'while true; do sleep 240; bash "$RUNNER_TEMP/save_session.sh" || true; done' > saver.log 2>&1 &
+          node index.js
+
+      - name: Save session (final)
+        if: always()
+        run: bash "$RUNNER_TEMP/save_session.sh" || true
